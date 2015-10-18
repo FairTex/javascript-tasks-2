@@ -45,7 +45,10 @@ function findContact(query) {
     var index = 0;
 
     phoneBook.forEach(function(item, i) {
-        if (item.name.indexOf(query) > -1 ||
+        if (query === undefined) {
+            result.push(new FoundRecords(item, -1));
+        }
+        else if (item.name.indexOf(query) > -1 ||
             item.phone.indexOf(query) > -1 ||
             item.email.indexOf(query) > -1) {
             result.push(new FoundRecords(item, i - removeIndex++));
@@ -76,7 +79,8 @@ module.exports.remove = function remove(query) {
     for (var i in result) {
         count++;
         var index = result[i].index;
-        delete phoneBook[index];
+        if (index == -1) break;
+        phoneBook.splice(index, 1);
     }
     console.log('Кол-во удаленных записей: ' + count);
     // Ваша необьяснимая магия здесь
@@ -88,6 +92,17 @@ module.exports.remove = function remove(query) {
 module.exports.importFromCsv = function importFromCsv(filename) {
     var data = require('fs').readFileSync(filename, 'utf-8');
 
+    var count = phoneBook.length;
+    var parseData = data.split(/[\r\n;]+/);
+
+    for (var i=0; i<parseData.length; i++) {
+        var name = parseData[i++];
+        var phone = parseData[i++];
+        var email = parseData[i];
+        this.add(name, phone, email);
+    }
+    console.log("Добавлено контактов: " + (phoneBook.length - count) );
+
     // Ваша чёрная магия:
     // - Разбираете записи из `data`
     // - Добавляете каждую запись в книгу
@@ -97,17 +112,76 @@ module.exports.importFromCsv = function importFromCsv(filename) {
    Функция вывода всех телефонов в виде ASCII (задача со звёздочкой!).
 */
 module.exports.showTable = function showTable() {
-    var count = 0;
-
-    console.log('    Имя   |   Телефон   |   Email ');
+    var max = {
+        nameLength: 0,
+        phoneLength: 0,
+        emailLength: 0
+    };
     for (var i in phoneBook) {
-        count++;
         var contact = phoneBook[i];
-        console.log(count + ') ' +
-            contact.name + ',  ' +
-            contact.phone + ',  ' +
-            contact.email);
+        contact.phone = normalize(contact.phone);
+        if (contact.name.length > max.nameLength) max.nameLength = contact.name.length;
+        if (contact.phone.length > max.phoneLength) max.phoneLength = contact.phone.length;
+        if (contact.email.length > max.emailLength) max.emailLength = contact.email.length;
     }
+
+    if (3 > max.nameLength) max.nameLength = 3;
+    if (7 > max.phoneLength) max.phoneLength = 7;
+    if (5 > max.emailLength) max.emailLength = 5;
+
+    console.log(repeat(max.nameLength + 3 + max.phoneLength + 3 + max.emailLength + 2, "-"));
+    console.log("Имя" + repeat(max.nameLength - 3, " ") + " | " +
+        "Телефон" + repeat(max.phoneLength - 7, " ") + " | " +
+        "Email" + repeat(max.emailLength-5, " ") + " |");
+    console.log(repeat(max.nameLength + 3 + max.phoneLength + 3 + max.emailLength + 2, "-"));
+
+    for (var i in phoneBook) {
+        var contact = phoneBook[i];
+        var ph = contact.phone;
+        var em = contact.email;
+        var nm = contact.name;
+        console.log(nm + repeat(max.nameLength - nm.length, " ") + " | " +
+            ph + repeat(max.phoneLength - ph.length, " ") + " | " +
+            em + repeat(max.emailLength - em.length, " ") + " |");
+        console.log(repeat(max.nameLength + 3 + max.phoneLength + 3 + max.emailLength + 2, "-"));
+
+    }
+
     // Ваша чёрная магия здесь
 
 };
+
+function repeat(count, s) {
+    var str = "";
+    var spaceCount = Math.round(count);
+    for (var i=0; i<spaceCount; i++) {
+        str += s;
+    }
+    return str;
+}
+
+function normalize(phone) {
+    var p = phone.replace(/\D/g, "");
+    var newPhone = "";
+
+    for (var i in p) {
+        var digit = p[p.length - 1 - i];
+        newPhone += digit;
+        if (newPhone.length == 2) newPhone += "-";
+        if (newPhone.length == 5) newPhone += "-";
+        if (newPhone.length == 9) newPhone += " )";
+        if (newPhone.length == 14) newPhone += "( ";
+        if (newPhone.length >= 17 && i == p.length - 1) newPhone += "+";
+    }
+
+    return reverseStr(newPhone);
+}
+
+function reverseStr(str) {
+    var newStr = '', i;
+    for (i = str.length - 1; i >= 0; i--) {
+        newStr += str.charAt(i);
+    }
+    return newStr;
+}
+
