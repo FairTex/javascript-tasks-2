@@ -16,7 +16,7 @@ var phoneBook = []; // Здесь вы храните записи как хот
    На вход может прийти что угодно, будьте осторожны.
 */
 module.exports.add = function add(name, phone, email) {
-    if (isDataCorrect(phone, email))
+    if (isDataCorrect(phone, email) && arguments.length == 3)
         phoneBook.push(new Entry(name, phone, email));
 
     // Ваша невероятная магия здесь
@@ -113,9 +113,9 @@ module.exports.importFromCsv = function importFromCsv(filename) {
 */
 module.exports.showTable = function showTable() {
     var max = {
-        nameLength: 0,
-        phoneLength: 0,
-        emailLength: 0
+        nameLength: 3,
+        phoneLength: 7,
+        emailLength: 5
     };
     for (var i in phoneBook) {
         var contact = phoneBook[i];
@@ -124,10 +124,6 @@ module.exports.showTable = function showTable() {
         if (contact.phone.length > max.phoneLength) max.phoneLength = contact.phone.length;
         if (contact.email.length > max.emailLength) max.emailLength = contact.email.length;
     }
-
-    if (3 > max.nameLength) max.nameLength = 3;
-    if (7 > max.phoneLength) max.phoneLength = 7;
-    if (5 > max.emailLength) max.emailLength = 5;
 
     console.log(repeat(max.nameLength + 3 + max.phoneLength + 3 + max.emailLength + 2, "-"));
     console.log("Имя" + repeat(max.nameLength - 3, " ") + " | " +
